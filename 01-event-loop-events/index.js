@@ -1,4 +1,5 @@
 const fs = require('fs');
+const dns = require('dns');
 
 console.log('Program start');
 
@@ -6,14 +7,19 @@ function timeStamp() {
   return performance.now().toFixed(2);
 }
 
+// Timeouts
 setTimeout(() => {
   console.log('Timeout 1', timeStamp());
 }, 0);
 
 setTimeout(() => {
+  process.nextTick(() => {
+    console.log('Next tick Two', timeStamp());
+  });
   console.log('Timeout 2', timeStamp());
 }, 10);
 
+// Close events
 fs.writeFile('./test.txt', 'Hello, World!', (err) => {
   if (err) {
     console.error('Error writing file:', err);
@@ -22,16 +28,38 @@ fs.writeFile('./test.txt', 'Hello, World!', (err) => {
   console.log('File written successfully', timeStamp());
 });
 
+// Promises
 Promise.resolve().then(() => {
   console.log('Promise 1', timeStamp());
 });
 
+// Next ticks
 process.nextTick(() => {
   console.log('Next tick One', timeStamp());
 });
 
+// setImmediate (Check)
 setImmediate(() => {
   console.log('Immediate 1', timeStamp());
+});
+
+// с помощью модуля dns - отправим dns запрос, который будет выполнен в фазе event loop, после всех колбек функций, отложенных с помощью nextTick и setImmediate. Это позволит нам увидеть, что колбек функции, отложенные с помощью process.nextTick(), выполняются раньше других колбек функций в очереди событий.
+
+// dns попадает в категорию I/O операций, и его колбек функции выполняются в фазе event loop, которая обрабатывает I/O события. Это означает, что колбек функции, связанные с dns запросами, будут выполнены после всех колбек функций, отложенных с помощью nextTick и setImmediate, что позволяет нам увидеть порядок выполнения колбек функций в очереди событий.
+
+// В данном примере мы используем функцию dns.lookup() для выполнения DNS-запроса к домену google.com. Колбек функция, переданная в dns.lookup(), будет выполнена после всех колбек функций, отложенных с помощью nextTick и setImmediate, что позволяет нам увидеть порядок выполнения колбек функций в очереди событий.
+
+// I/O Events
+dns.lookup('localhost', (err, address, family) => {
+  // address - это IP-адрес, который соответствует домену google.com. Если запрос выполнится успешно, то в переменной address будет содержаться IP-адрес, который был найден для данного домена. Если же возникнет ошибка при выполнении запроса, то в переменной err будет содержаться информация об ошибке, которая произошла во время выполнения запроса. В любом случае, после выполнения запроса мы выведем результат в консоль вместе с текущим временем, чтобы увидеть порядок выполнения колбек функций в очереди событий.
+  // family - это номер семейства IP-адреса, который соответствует домену google.com.
+  if (err) {
+    console.error('DNS lookup error:', err);
+    return;
+  }
+  console.log('DNS lookup result:', address, family, timeStamp());
+  Promise.resolve().then(() => console.log('Promise 2', timeStamp()));
+  process.nextTick(() => console.log('Next tick Three', timeStamp()));
 });
 
 console.log('Program end');
@@ -39,12 +67,16 @@ console.log('Program end');
 // видим, что колбек функция в nextTick выполнится до всех остальных, так как она имеет более высокий приоритет в очереди событий. Затем выполнится колбек функция из Promise, а после этого начнут выполняться колбеки из фаз event loop, включая setTimeout и setImmediate. В итоге вывод будет следующим:
 // Program start
 // Program end
-// Next tick One
-// Promise 1
-// Timeout 1
-// Immediate 1
-// File written successfully
-// Timeout 2
+// Next tick One 29.21
+// Promise 1 29.38
+// Timeout 1 29.44
+// DNS lookup result: 127.0.0.1 4 29.66
+// Next tick Three 29.84
+// Promise 2 29.92
+// Immediate 1 30.04
+// File written successfully 30.42
+// Timeout 2 35.84
+// Next tick Two 36.11
 
 // nextTick - это специальная функция в Node.js, которая позволяет отложить выполнение колбек функции до следующей итерации цикла событий. Она имеет более высокий приоритет, чем другие колбек функции, и выполняется перед ними. Это полезно для выполнения задач, которые должны быть выполнены до обработки других событий, таких как обработка ошибок или выполнение асинхронных операций.
 
@@ -56,8 +88,46 @@ console.log('Program end');
 
 // performance - это глобальный объект в JavaScript, который предоставляет методы для измерения производительности и времени выполнения различных операций. Он включает в себя методы, такие как performance.now(), performance.mark(), performance.measure() и другие, которые позволяют разработчикам анализировать, сравнивать и оптимизировать производительность своих приложений. В данном примере мы используем performance.now() для отображения времени выполнения различных колбек функций, чтобы увидеть, в каком порядке они срабатывают и насколько близко друг к другу по времени.
 
+// Next tick Two - это колбек функция, которая была отложена с помощью process.nextTick() внутри колбек функции setTimeout. Она будет выполнена после завершения текущей итерации цикла событий, но перед другими колбек функциями, отложенными с помощью setTimeout и setImmediate. Это демонстрирует, что колбек функции, отложенные с помощью process.nextTick(), имеют более высокий приоритет и выполняются раньше других колбек функций в очереди событий.
+
 /*
 process.nextTick() откладывает callback не до следующей полноценной итерации event loop, а до момента сразу после завершения текущего синхронного кода, перед Promise и перед фазами event loop.
 То есть “отложить” здесь значит:
 “Не выполняй callback прямо сейчас, пока идет основной код, но выполни его сразу после того, как call stack станет пустым.”
+*/
+
+/*
+Главная схема:
+
+  Синхронный код
+  ↓
+  process.nextTick
+  ↓
+  Promise callbacks
+  ↓
+  Timers: setTimeout / setInterval
+  ↓
+  I/O callbacks
+  ↓
+  Check: setImmediate
+  ↓
+  Close callbacks
+
+  А после каждого callback Node снова проверяет:
+  process.nextTick → Promise
+  
+  Поэтому Next tick Three идёт сразу после DNS lookup result, а Next tick Two сразу после Timeout 2.
+
+  То есть логика такая:
+    Запустился callback setTimeout 2
+    ↓
+    добавили Next tick Two в очередь nextTick
+    ↓
+    вывели Timeout 2
+    ↓
+    callback setTimeout закончился
+    ↓
+    Node очистил очередь nextTick
+    ↓
+    вывел Next tick Two
 */
