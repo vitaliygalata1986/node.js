@@ -1,13 +1,6 @@
-console.log(arguments.callee.toString());
-console.log('Bogdan');
+const { myName, myHobbies, myFavoriteNumber } = require('./multiple-exports');
+const greetingFn = require('./single-exports'); // лучше использовать относительный путь, так как он будет работать везде, а абсолютный путь может не работать на других машинах
 
-/*
-    function (exports, require, module, __filename, __dirname) {
-        console.log(arguments.callee.toString()); // [Function (anonymous)]
-        console.log('Bogdan')
-    }
-*/
+// const greetingFn = require('/var/www/node_loc./03-commonjs-modules/single-exports.js');
 
-// тоесть мы видим, как выглядит функция, которая оборачивает весь наш код в модуле.
-// И мы видим, что она принимает 5 аргументов: exports, require, module, __filename и __dirname.
-// Эти аргументы доступны внутри нашего модуля и позволяют нам работать с экспортами, импортами и информацией о файлах.
+greetingFn(myName);
