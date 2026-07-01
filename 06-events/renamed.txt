@@ -1,0 +1,2 @@
+First file text
+Appended text
