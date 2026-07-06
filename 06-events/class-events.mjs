@@ -13,9 +13,22 @@ class Post extends EventEmitter {
     this.author = author;
     this.text = text;
     this.likesQty = 0; // количество лайков для поста (у вновь созданного поста будет 0 лайков)
+
+    // добавим слушателя события likePost
+    // можно регестрировать слушатель непосредственно в конструкторе класса Post, чтобы при создании поста сразу был слушатель события likePost
+    this.on('likePost', (username) => {
+      console.log(`Post liked by ${username}! Total likes: ${myPost.likesQty}`);
+    });
+
+    this.on('error', (error) => {
+      console.error(`Error: ${error.message}`);
+    });
   }
 
   like(username) {
+    if (!username) {
+      return this.emit('error', new Error('No username in the like request'));
+    }
     this.likesQty++;
     // добавим событие (создаем событие likePost), которое будет генерироваться при вызове метода like
     this.emit('likePost', username); // генерируем событие like и передаем количество лайков
@@ -24,21 +37,12 @@ class Post extends EventEmitter {
 
 const myPost = new Post('Vitaliy', 'Hello, this is my first post!');
 
-// добавим слушателя события likePost
-myPost.on('likePost', (username) => {
-  console.log(`Post liked by ${username}! Total likes: ${myPost.likesQty}`);
-});
-
-// console.log(myPost.author);
-// console.log(myPost.text);
-// console.log(myPost.likesQty);
 myPost.like('Alice');
 
 setTimeout(() => {
-  myPost.like('Bob');
+  myPost.like();
 }, 1000);
 
 setTimeout(() => {
   myPost.like('Charlie');
 }, 2000);
-// console.log(myPost.likesQty);
