@@ -29,6 +29,10 @@ const server = http.createServer((req, res) => {
     res.setHeader('Content-Type', 'application/json');
     return res.end(JSON.stringify(comments)); // конвертируем массив comments в JSON-строку и отправляем его в ответе
   }
+
+  res.statusCode = 404;
+  res.setHeader('Content-Type', 'text/html');
+  return res.end('<h1>Page Not Found</h1>');
 });
 
 server.listen(PORT, () => {
