@@ -6,47 +6,67 @@ function getHtml(req, res) {
   res.write('<html><body><div>');
   res.write('<h1>Greetings from http server</h1>');
   res.write('</div></body></html>');
-  return res.end();
+  res.end();
 }
 
 function getText(req, res) {
   res.statusCode = 200;
   res.setHeader('Content-Type', 'text/plain');
-  return res.end('This is plain text');
+  res.end('This is plain text');
 }
 
 function getComments(req, res) {
   res.statusCode = 200;
   res.setHeader('Content-Type', 'application/json');
-  return res.end(JSON.stringify(comments)); //
+  res.end(JSON.stringify(comments)); //
 }
 
 function postComment(req, res) {
-  let commentJSON = '';
+  res.setHeader('Content-Type', 'text/plain'); // Сервер будет отвечать клиенту обычным текстом.
 
-  // событие data - мы будет обрабатывать запрос от клиента частями
-  req.on('data', (chunk) => {
-    // console.log(chunk.toString());
-    /*
+  /*
+  Поэтому все три твоих ответа:
+  'Comment data was received'
+  'Invalid JSON format'
+  'Content-Type must be application/json'
+    возвращаются как: Content-Type: text/plain
+  */
+
+  if (req.headers['content-type'] === 'application/json') {
+    let commentJSON = '';
+
+    // событие data - мы будет обрабатывать запрос от клиента частями
+    req.on('data', (chunk) => {
+      // console.log(chunk.toString());
+      /*
       {
         "id": 350, 
         "text": "New comment", 
         "author": "Vitaliy"
       }
     */
-    commentJSON += chunk; // мы дописываем данные из след. чанка
-  });
-  req.on('end', () => {
-    comments.push(JSON.parse(commentJSON)); // добавляем новый комментарий в массив. parse - преобразуем строку JSON в объект
-    res.statusCode = 200;
-    res.end('Comment data was received');
-  }); // окончание получения запроса от клиента
+      commentJSON += chunk; // мы дописываем данные из след. чанка
+    });
+    req.on('end', () => {
+      try {
+        comments.push(JSON.parse(commentJSON)); // добавляем новый комментарий в массив. parse - преобразуем строку JSON в объект
+        res.statusCode = 200;
+        res.end('Comment data was received');
+      } catch (error) {
+        res.statusCode = 400; // ошибка клиента, т.к. он отправил не JSON
+        res.end('Invalid JSON format');
+      }
+    }); // окончание получения запроса от клиента
+  } else {
+    res.statusCode = 400; // это ошибка клиента, т.к. он отправил не JSON
+    res.end('Content-Type must be application/json');
+  }
 }
 
 function handleNotFound(req, res) {
   res.statusCode = 404;
   res.setHeader('Content-Type', 'text/html');
-  return res.end('<h1>Page Not Found</h1>');
+  res.end('<h1>Page Not Found</h1>');
 }
 
 module.exports = { getHtml, getText, getComments, handleNotFound, postComment };
@@ -73,4 +93,27 @@ module.exports = { getHtml, getText, getComments, handleNotFound, postComment };
     получаем JavaScript-объект
             ↓
     comments.push(...)
+*/
+
+/*
+1. Я буду отвечать текстом.
+
+2. Проверяю:
+   клиент заявил, что отправляет JSON?
+
+   НЕТ
+   → 400
+   → "Content-Type must be application/json"
+
+   ДА
+   → собираю body
+   → JSON.parse()
+
+       удалось
+       → 200
+       → "Comment data was received"
+
+       не удалось
+       → 400
+       → "Invalid JSON format"
 */
