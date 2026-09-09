@@ -4,6 +4,7 @@ const {
   getHtml,
   getText,
   getComments,
+  getHome,
   handleNotFound,
   postComment,
 } = require('./handlers');
@@ -11,6 +12,10 @@ const {
 const PORT = 3000;
 
 const server = http.createServer((req, res) => {
+  if (req.method === 'GET' && req.url === '/') {
+    return getHome(req, res);
+  }
+
   if (req.method === 'GET' && req.url === '/html') {
     return getHtml(req, res);
   }

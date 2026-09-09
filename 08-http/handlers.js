@@ -1,4 +1,21 @@
+const fs = require('fs');
 const comments = require('./data');
+const qs = require('querystring');
+
+function getHome(req, res) {
+  fs.readFile('./files/comment-form.html', (err, data) => {
+    if (err) {
+      // если произошла ошибка при чтении файла
+      res.statusCode = 500;
+      res.setHeader('Content-Type', 'text/plain');
+      res.end('Server error while loading HTML file');
+    } else {
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'text/html');
+      res.end(data); // по окончании чтения файла мы отправляем его содержимое в ответе клиенту
+    }
+  });
+}
 
 function getHtml(req, res) {
   res.statusCode = 200;
@@ -23,7 +40,6 @@ function getComments(req, res) {
 
 function postComment(req, res) {
   res.setHeader('Content-Type', 'text/plain'); // Сервер будет отвечать клиенту обычным текстом.
-
   /*
   Поэтому все три твоих ответа:
   'Comment data was received'
@@ -31,8 +47,32 @@ function postComment(req, res) {
   'Content-Type must be application/json'
     возвращаются как: Content-Type: text/plain
   */
-
-  if (req.headers['content-type'] === 'application/json') {
+  if (req.headers['content-type'] === 'application/x-www-form-urlencoded') {
+    // выполняем обработку данных из формы
+    let body = '';
+    req.on('data', (chunk) => (body += chunk.toString())); // собираем данные из формы в переменную body
+    req.on('end', () => {
+      try {
+        // обрабатываем данные из формы
+        // console.log(body); // id=10&author=Vitaliy&text=text+Vitaly
+        // теперь полученную строку нужно преобразовать в объект
+        const comment = qs.parse(body); // { id: '10', author: 'Vitaliy',
+        // console.log(comment);
+        // text: 'text Vitaly' }
+        // сделаем конвертацию id в число, т.к. в форме все данные приходят как строки
+        comment.id = parseInt(comment.id);
+        comments.push(comment); // добавляем новый комментарий в массив
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'text/html');
+        res.write('<h1>Comment data was received</h1>');
+        res.write('<a href="/">Submit one more comment</a>');
+        res.end('');
+      } catch (error) {
+        res.statusCode = 400;
+        res.end('Invalid form data');
+      }
+    });
+  } else if (req.headers['content-type'] === 'application/json') {
     let commentJSON = '';
 
     // событие data - мы будет обрабатывать запрос от клиента частями
@@ -59,7 +99,7 @@ function postComment(req, res) {
     }); // окончание получения запроса от клиента
   } else {
     res.statusCode = 400; // это ошибка клиента, т.к. он отправил не JSON
-    res.end('Content-Type must be application/json');
+    res.end('Content-Type must be application/json format or as form');
   }
 }
 
@@ -69,7 +109,14 @@ function handleNotFound(req, res) {
   res.end('<h1>Page Not Found</h1>');
 }
 
-module.exports = { getHtml, getText, getComments, handleNotFound, postComment };
+module.exports = {
+  getHome,
+  getHtml,
+  getText,
+  getComments,
+  handleNotFound,
+  postComment,
+};
 
 /*
   Когда клиент отправляет POST-запрос с JSON, тело запроса передаётся по сети как данные. В Node.js мы через req.on('data') подписываемся на получение частей тела запроса. Каждая такая часть приходит в chunk. Мы постепенно собираем эти части в строку commentJSON. Когда приходит событие end, это означает, что тело одного запроса полностью получено. После этого мы используем JSON.parse(), чтобы преобразовать JSON-строку в JavaScript-объект, и добавляем этот объект в массив comments.

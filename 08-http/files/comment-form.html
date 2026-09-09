@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Add a commnent</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      h1 {
+        text-align: center;
+      }
+      label {
+        display: block;
+        margin-top: 10px;
+      }
+      input[type='text'],
+      input[type='number'],
+      textarea {
+        width: 300px;
+        padding: 5px;
+        margin-top: 5px;
+        font-size: 16px;
+        margin: 5px;
+        border: 1px solid #ccc;
+      }
+      input[type='submit'] {
+        margin-top: 10px;
+        padding: 5px 10px;
+      }
+      form {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      input[type='submit'],
+      button {
+        color: white;
+        background-color: #007bff;
+        padding: 12px 15px;
+        margin: 10px;
+        border: none;
+        cursor: pointer;
+        font-size: 16px;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Add a new comment</h1>
+    <form action="/comments" method="POST">
+      <label for="id">Comment ID:</label>
+      <input type="number" id="id" name="id" required />
+
+      <label for="author">Author:</label>
+      <input type="text" id="author" name="author" required />
+
+      <label for="text">Text:</label>
+      <textarea id="text" name="text" required></textarea>
+
+      <input type="submit" value="Submit" />
+    </form>
+  </body>
+</html>
