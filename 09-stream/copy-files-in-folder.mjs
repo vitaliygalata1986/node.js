@@ -1,48 +1,66 @@
-// скопируем файл file.txt, который находится в папке files
 import fs from 'fs';
+import path from 'path';
 
-const fileName = './files/file.txt';
-const copiedFileName = './files/file_copy.txt';
+const sourceDir = './files';
+const destinationDir = './copird-files';
 
-const readStream = fs.createReadStream(fileName); // создадим поток для чтения
-const writeStream = fs.createWriteStream(copiedFileName); // создадим поток для записи
+if (!fs.existsSync(sourceDir)) {
+  // если директория не существует
+  console.warn(`Source dir ${sourceDir} doesn't exist!`);
+  console.log('Exiting...');
+  process.exit(0); // выход из процесса с кодом 0 (успешное завершение)
+}
 
-readStream.pipe(writeStream); // перенаправим поток чтения в поток записи
+if (fs.existsSync(destinationDir)) {
+  // то удалим директорию
+  fs.rmSync(destinationDir, { recursive: true });
+  // console.log('Destination dir removed');
+}
 
-readStream.on('end', () => console.log('Read stream ended'));
-writeStream.on('finish', () => console.log('File was copied'));
-writeStream.on('close', () => console.log('Write stream close'));
+fs.mkdirSync(destinationDir); // создадим директорию
+
+// дальше копируем файлы из sourceDir в destinationDir с пом. потока
+// также будем выполнять переименование файлов, добавляя номер каждого файла в начало
+
+fs.readdir(sourceDir, (err, fileNames) => {
+  // прочитаем содержимое всех файлов в sourceDir
+  if (err) {
+    console.log(err);
+    process.exit(1); // выход из процесса с кодом 1 (ошибка)
+  }
+  // console.log(fileNames);
+
+  fileNames.forEach((fileName, index) => {
+    const sourceFilePath = path.join(sourceDir, fileName); // путь к файлу, который мы копируем
+    // console.log(sourceFilePath);
+    // названия файлов к целевой папке
+    const destinationFilePath = path.join(
+      destinationDir,
+      `${index + 1}-${fileName}`,
+    ); // путь к новому файлу
+    // console.log(destinationFilePath);
+
+    // создаем два потока
+    // первый - для чтения мз файла
+    const readFileStream = fs.createReadStream(sourceFilePath);
+    // второй - для записи в файл
+    const writeFileStream = fs.createWriteStream(destinationFilePath);
+    // поток для чтения направляется в поток для записи
+    readFileStream.pipe(writeFileStream);
+    writeFileStream.on('finish', () => {
+      console.log(`File ${fileName} was copied`);
+    });
+  });
+});
+
+// Используем синхронное удаление,
+// чтобы следующая строка выполнилась только после полного удаления директории.
+// Не нужно строить цепочку callback'ов:
+// Поэтому для небольших CLI-скриптов, которые просто последовательно копируют/удаляют файлы, Sync часто вполне нормально.
 
 /*
-    fs.createReadStream(fileName) создаёт поток чтения из file.txt. Важно: он не считывает весь файл сразу в readStream. readStream — это объект, который будет постепенно получать данные из файла кусками.
-
-    Потом:
-
-    const writeStream = fs.createWriteStream(copiedFileName);
-
-    создаётся поток записи. Если file_copy.txt ещё не существует, Node.js создаст его. Если существует — по умолчанию его содержимое будет перезаписано.
-
-    А здесь:
-
-    readStream.pipe(writeStream);
-
-    ты буквально говоришь:
-
-    Всё, что приходит из readStream, передавай в writeStream.
-
-    То есть процесс выглядит так:
-
-    file.txt
-    ↓
-    readStream
-    ↓ pipe()
-    writeStream
-    ↓
-    file_copy.txt
-
-    Чтение и запись происходят параллельно, по частям:
-        - прочитали кусок → записали кусок
-        - прочитали следующий кусок → записали следующий кусок
-    Именно поэтому streams особенно удобны для больших файлов: весь файл не нужно держать в оперативной памяти.    
-...
+    Sync = проще, но блокирует выполнение.
+    Async = сложнее управлять порядком, но Node может продолжать заниматься другими задачами.
 */
+
+// readdir - возвращает массив всех файлов в директории (имена файлов, а не пути к ним)
