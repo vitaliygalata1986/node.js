@@ -1,8 +1,10 @@
-import dotenv from 'dotenv';
+// первый вариант:
+// import dotenv from 'dotenv';
+// dotenv.config();
 
-// console.log(dotenv);
-
-dotenv.config();
+// второй вариант боллее предпочтительный:
+import { config } from 'dotenv';
+config();
 
 console.log(process.env.DB_USERNAME);
 console.log(process.env.DB_PASSWORD);
