@@ -1,3 +1,5 @@
 Docs.odt
 *.odt
-.~lock.Node.odt# 
+.~lock.*.odt#
+node_modules
+.env 
