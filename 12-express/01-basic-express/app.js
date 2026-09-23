@@ -1,11 +1,52 @@
-const http = require('http');
+// Подключаем библиотеку Express.
+// Express — это надстройка над встроенным модулем Node.js `http`.
+// Под капотом Express всё равно использует HTTP-сервер,
+// но предоставляет более удобные методы для маршрутов, запросов и ответов.
+const express = require('express');
 
-const server = http.createServer((req, res) => {
-  res.statusCode = 200;
-  res.setHeader('Content-Type', 'text/plain');
-  res.end('Hello World');
+// Создаём приложение Express.
+// Объект app будет использоваться для настройки маршрутов
+// и запуска HTTP-сервера.
+const app = express();
+
+// app.get() создаёт обработчик GET-запроса.
+//
+// '/' — это маршрут, то есть главная страница сайта.
+// Если клиент отправит:
+// GET /
+//
+// Express вызовет callback-функцию:
+//
+// req — объект запроса (request).
+// В нём находится информация о входящем HTTP-запросе:
+// URL, headers, query parameters и т.д.
+//
+// res — объект ответа (response).
+// Через него мы отправляем ответ клиенту.
+app.get('/', (req, res) => {
+  // res.send() отправляет HTTP-ответ клиенту.
+  //
+  // Мы передаём обычную строку.
+  // Express автоматически понимает, что это текст,
+  // устанавливает подходящий Content-Type
+  // и отправляет данные клиенту.
+  //
+  // То есть нам не нужно вручную делать что-то вроде:
+  // res.setHeader(...)
+  // res.end(...)
+  //
+  // Express делает это за нас.
+  res.send('Response from Express');
 });
 
-server.listen(3000, () => {
-  console.log('Server running at http://localhost:3000');
+// app.listen() запускает HTTP-сервер.
+//
+// 5000 — порт, на котором сервер будет слушать входящие запросы.
+//
+// Под капотом Express создаёт HTTP-сервер,
+// используя встроенный в Node.js модуль `http`.
+app.listen(5000, () => {
+  // Эта callback-функция вызывается после того,
+  // как сервер успешно запустился и начал слушать порт 5000.
+  console.log('Server was started on port 5000');
 });
