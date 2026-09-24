@@ -1,34 +1,37 @@
 const express = require('express');
 
+const commentsRouter = require('./routes/comments');
+
 const app = express();
 
+app.use('/comments', commentsRouter);
+// если мы используем метод use, то для этого маршрута мы можем испольpовать все методы http:
+// /comments/123
+// /comments/
+
 const getRootHandler = (req, res) => {
-  res.send('Get  root route');
+  res.send('Root route');
 };
 
-const getCommentsHandler = (req, res) => {
-  res.send('Get comments route');
+// users
+const getUsersHandler = (req, res) => {
+  res.send('Get users route');
 };
 
-const postCommentsHandler = (req, res) => {
-  res.send('Post comments route');
+const getSingleUserHandler = (req, res) => {
+  res.send(`Get user route. UserId ${req.params.userId}`);
 };
 
-const getCommentHandler = (req, res) => {
-  // console.log(req.params); //  { commentId: '100' }
-  res.send(`Get comment route. CommetnId ${req.params.commentId}`);
+const postsUsersHandler = (req, res) => {
+  res.send('Posts users route');
 };
-
-/*
-app.get('/', getRootHandler);
-app.get('/comments', getCommentsHandler);
-app.post('/comments', postCommentsHandler);
-app.get('/comments/:commentId', getCommentHandler);
-*/
 
 app.get('/', getRootHandler);
-app.route('/comments').get(getCommentsHandler).post(postCommentsHandler);
-app.get('/comments/:commentId', getCommentHandler);
+
+// users
+app.get('/users', getUsersHandler);
+app.post('/users', postsUsersHandler);
+app.get('/users/:userId', getSingleUserHandler);
 
 app.listen(5000, () => {
   console.log('Server was started on port 5000');
