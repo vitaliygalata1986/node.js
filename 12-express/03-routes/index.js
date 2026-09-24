@@ -19,9 +19,15 @@ const getCommentHandler = (req, res) => {
   res.send(`Get comment route. CommetnId ${req.params.commentId}`);
 };
 
+/*
 app.get('/', getRootHandler);
 app.get('/comments', getCommentsHandler);
 app.post('/comments', postCommentsHandler);
+app.get('/comments/:commentId', getCommentHandler);
+*/
+
+app.get('/', getRootHandler);
+app.route('/comments').get(getCommentsHandler).post(postCommentsHandler);
 app.get('/comments/:commentId', getCommentHandler);
 
 app.listen(5000, () => {
